@@ -1,2 +1,2 @@
 # sql-queries
-This directories contain sql-usefull queries. 
+These directories contain SQL-useful queries. 
