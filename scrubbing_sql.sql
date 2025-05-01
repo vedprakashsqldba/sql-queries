@@ -25,5 +25,4 @@ go
 
 update configuration set variable_value = '' where licensee_code = '<<licenseeCode>>' and variable = 'WhiteListedIPs';
 update configuration set variable_value = '' where licensee_code = '<<licenseeCode>>' and variable = 'Copymailboxaddress'; 
-update transmission_log set sent_to = ''
-; 
+update transmission_log set sent_to = ''; 
