@@ -1,0 +1,5 @@
+ALTER DATABASE OMSQA1_AIM SET QUERY_STORE CLEAR;
+go
+ALTER DATABASE SCOPED CONFIGURATION CLEAR PROCEDURE_CACHE; 
+GO
+--alter database [waiting_memorygrant]  set compatibity_level=130;

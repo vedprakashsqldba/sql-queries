@@ -1,0 +1,20 @@
+SELECT ob.[object_id]
+	,max(sm.[name]) AS [schema_name]
+	,max(tb.[name]) AS [table_name]
+	,st.[stats_id]
+	,max(st.[name]) AS [stats_name]
+	,string_agg(co.[name], ',') AS [stats_column_names]
+	,STATS_DATE(ob.[object_id], st.[stats_id]) AS [stats_last_updated_date]
+	,'UPDATE STATISTICS ' + quotename(max(sm.[name])) + '.' + quotename(max(tb.[name])) + ';' as [update_stats_stmt]
+FROM sys.objects ob
+JOIN sys.stats st ON ob.[object_id] = st.[object_id]
+JOIN sys.stats_columns sc ON st.[stats_id] = sc.[stats_id]
+	AND st.[object_id] = sc.[object_id]
+JOIN sys.columns co ON sc.[column_id] = co.[column_id]
+	AND sc.[object_id] = co.[object_id]
+JOIN sys.types ty ON co.[user_type_id] = ty.[user_type_id]
+JOIN sys.tables tb ON co.[object_id] = tb.[object_id]
+JOIN sys.schemas sm ON tb.[schema_id] = sm.[schema_id]
+WHERE st.[stats_id] > 1
+GROUP BY ob.[object_id], st.[stats_id]
+ORDER BY stats_last_updated_date
