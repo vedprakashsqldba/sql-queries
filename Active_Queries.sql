@@ -34,7 +34,7 @@ CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t
 WHERE s.login_name like  '%dep%';
 
 
-SELECT TOP 10 s.session_id,
+SELECT TOP 10 s.session_id,git remote -v
            r.status,
            r.cpu_time,
            r.logical_reads,
@@ -113,13 +113,3 @@ LCK_M_*						Lock waits								Investigate blocking, long transactions
 
 select * from sys.dm_os_wait_stats
 ORDER BY  3 DESC;
-
-sp_who2
-
-lockable - 550 * 
-
-cvv 247 
-
-Ninja 300 - 340
-Yamaha R3 - 360
-
