@@ -1,0 +1,203 @@
+DECLARE @DBName SYSNAME = N'omsqa_metadata';  -- 🔹 Change DB name here
+
+-- Build dynamic names
+DECLARE @AppUser SYSNAME       = @DBName + N'_app_user';
+DECLARE @ReadOnlyUser SYSNAME  = @DBName + N'_readonly_user';
+DECLARE @BIUser SYSNAME        = @DBName + N'_bi_user';
+DECLARE @omsdeploy SYSNAME     =  N'omsdeploy';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+-- =====================================
+-- 1️⃣ Create LOGINS at server level
+-- =====================================
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @AppUser)
+    EXEC('CREATE LOGIN [' + @AppUser + '] WITH PASSWORD = N''r7UpFNtORfZdufJx'';');
+
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @ReadOnlyUser)
+    EXEC('CREATE LOGIN [' + @ReadOnlyUser + '] WITH PASSWORD = N''r7UpFNtORfZdufJx'';');
+
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @BIUser)
+    EXEC('CREATE LOGIN [' + @BIUser + '] WITH PASSWORD = N''r7UpFNtORfZdufJx'';');
+
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @omsdeploy)
+    EXEC('CREATE LOGIN [' + @omsdeploy + '] WITH PASSWORD = N''r7UpFNtORfZdufJx'';');
+ 
+ 
+-- =====================================
+-- 2️⃣ Create USERS inside database
+-- =====================================
+DECLARE @DBName SYSNAME = N'omsqa_metadata';  -- 🔹 Change DB name here
+-- Build dynamic names
+DECLARE @AppUser SYSNAME       = @DBName + N'_app_user';
+DECLARE @BIUser SYSNAME        = @DBName + N'_bi_user';
+DECLARE @omsdeploy SYSNAME     =  N'omsdeploy';
+
+DECLARE @SQL NVARCHAR(MAX);
+SET @SQL = N'
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N''' + @AppUser + N''')
+    CREATE USER [' + @AppUser + N'] FOR LOGIN [' + @AppUser + N'];
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N''' + @BIUser + N''')
+    CREATE USER [' + @BIUser + N'] FOR LOGIN [' + @BIUser + N'];
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N''' + @omsdeploy + N''')
+    CREATE USER [' + @omsdeploy + N'] FOR LOGIN [' + @omsdeploy + N'];';
+EXEC (@SQL);
+
+-- =====================================
+-- 3️⃣ create roles                         (copy from other database same role)        
+-- =====================================
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'cds_public' AND type = 'R')
+BEGIN
+    CREATE ROLE [cds_public];
+END
+GO
+
+-- Create cds_view role if it does not exist
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'cds_view' AND type = 'R')
+BEGIN
+    CREATE ROLE [cds_view];
+END
+GO
+
+-- =====================================
+-- 3️⃣ Assign permission roles                                 -- Pending
+-- =====================================
+-- app_user → read + write
+DECLARE @DBName SYSNAME = N'omsqa_metadata';  -- 🔹 Change DB name here
+-- Build dynamic names
+DECLARE @AppUser SYSNAME       = @DBName + N'_app_user';
+DECLARE @BIUser SYSNAME        = @DBName + N'_bi_user';
+DECLARE @ReadOnlyUser SYSNAME  = @DBName + N'_readonly_user';
+DECLARE @omsdeploy SYSNAME     =  N'omsdeploy';
+DECLARE @SQL NVARCHAR(MAX);
+SET @SQL = N'USE ' + QUOTENAME(@DBName) + ';
+ALTER ROLE db_datareader ADD MEMBER [' + @AppUser + N'];
+ALTER ROLE db_datawriter ADD MEMBER [' + @AppUser + N'];';
+EXEC (@SQL);
+
+-- readonly_user → read only
+SET @SQL = N'USE ' + QUOTENAME(@DBName) + ';
+ALTER ROLE db_datareader ADD MEMBER [' + @ReadOnlyUser + N'];';
+EXEC (@SQL);
+
+-- bi_user → read only (you can extend with custom BI roles later)
+SET @SQL = N'USE ' + QUOTENAME(@DBName) + ';
+ALTER ROLE db_datareader ADD MEMBER [' + @BIUser + N'];';
+EXEC (@SQL);
+
+-- User omsdeploy
+alter role db_datareader 	add member omsdeploy;
+alter role db_datawriter 	add member omsdeploy;
+alter role db_ddladmin 		add member omsdeploy;
+alter role db_securityadmin add member omsdeploy;
+alter role db_sp_exec 		add member omsdeploy;
+go
+grant VIEW DATABASE PERFORMANCE STATE to omsdeploy;
+go
+
+
+ 
+-- =====================================
+-- 3️⃣ SYMMETRIC KEYS 
+-- =====================================
+DROP SYMMETRIC KEY [birthDateKey]  
+DROP SYMMETRIC KEY [ssnKey]  
+DROP SYMMETRIC KEY [AccountNumberKey]
+go 
+
+CREATE SYMMETRIC KEY [ssnKey] WITH
+	ALGORITHM = AES_256 
+    ENCRYPTION BY PASSWORD = N'A4dTyP@clear'
+GO 
+CREATE SYMMETRIC KEY [birthDateKey] WITH
+    ALGORITHM = AES_256 
+    ENCRYPTION BY PASSWORD = N'A4dTyP@clear'
+GO
+CREATE SYMMETRIC KEY [AccountNumberKey] WITH
+    ALGORITHM = AES_256 
+    ENCRYPTION BY PASSWORD = N'A4dTyP@clear'
+GO 
+
+
+DECLARE @DBName SYSNAME = N'omsqa_metadata';  -- 🔹 Change DB name here
+
+-- Build dynamic names
+DECLARE @AppUser SYSNAME       = @DBName + N'_app_user';
+DECLARE @ReadOnlyUser SYSNAME  = @DBName + N'_readonly_user';
+DECLARE @BIUser SYSNAME        = @DBName + N'_bi_user';
+DECLARE @omsdeploy SYSNAME     =  N'omsdeploy';
+
+DECLARE @SQL NVARCHAR(MAX);
+SET @SQL = N'USE ' + QUOTENAME(@DBName) + ';
+
+-- 🔹 Grant to app_user
+GRANT VIEW DEFINITION ON SYMMETRIC KEY::ssnkey          TO [' + @AppUser + N'];
+GRANT VIEW DEFINITION ON SYMMETRIC KEY::birthdatekey    TO [' + @AppUser + N'];
+GRANT VIEW DEFINITION ON SYMMETRIC KEY::AccountNumberKey TO [' + @AppUser + N'];
+
+-- 🔹 Grant to readonly_user
+GRANT VIEW DEFINITION ON SYMMETRIC KEY::ssnkey          TO [' + @ReadOnlyUser + N'];
+GRANT VIEW DEFINITION ON SYMMETRIC KEY::birthdatekey    TO [' + @ReadOnlyUser + N'];
+GRANT VIEW DEFINITION ON SYMMETRIC KEY::AccountNumberKey TO [' + @ReadOnlyUser + N'];';
+
+EXEC (@SQL);
+
+ 
+ -- GRANT CONTROL ON CERTIFICATE :: OMSPIICert TO vikkumar;
+SET @SQL = N'USE ' + QUOTENAME(@DBName) + ';
+GRANT VIEW DEFINITION ON CERTIFICATE::OMSPIICert TO [' + @AppUser + N'];
+GRANT VIEW DEFINITION ON SYMMETRIC KEY::birthDateKey TO [' + @AppUser + N'];
+--Grant Control
+GRANT CONTROL ON CERTIFICATE::OMSPIICert TO [' + @AppUser + N'];';
+
+EXEC (@SQL);
+
+-- =====================================
+-- 3️⃣ Create OMSPIICert
+-- =====================================
+
+IF NOT EXISTS (SELECT 1 FROM sys.certificates where name = 'OMSPIICert')
+BEGIN
+                CREATE CERTIFICATE OMSPIICert WITH SUBJECT = 'OMS PII Certificate'
+END
+GO
+
+IF EXISTS(select 1 from sys.symmetric_keys skey where skey.name = 'ssnKey')
+BEGIN
+IF NOT EXISTS (select 1 from sys.symmetric_keys skey inner join sys.key_encryptions enc on enc.key_id = skey.symmetric_key_id and crypt_type_desc like '%CERTIFICATE%'
+where skey.name = 'ssnKey')
+BEGIN
+				Open symmetric key ssnKey decryption BY password = 'A4dTyP@clear'
+                Alter symmetric key ssnKey Add encryption by Certificate OMSPIICert
+				Close symmetric key ssnKey
+END
+END
+GO
+
+IF EXISTS(select 1 from sys.symmetric_keys skey where skey.name = 'birthDateKey')
+BEGIN
+IF NOT EXISTS (select 1 from sys.symmetric_keys skey inner join sys.key_encryptions enc on enc.key_id = skey.symmetric_key_id and crypt_type_desc like '%CERTIFICATE%'
+where skey.name = 'birthDateKey')
+BEGIN
+				Open symmetric key birthDateKey decryption BY password = 'A4dTyP@clear'
+                Alter symmetric key birthDateKey Add encryption by Certificate OMSPIICert
+				Close symmetric key birthDateKey
+END
+END
+GO
+
+IF EXISTS(select 1 from sys.symmetric_keys skey where skey.name = 'AccountNumberKey')
+BEGIN
+IF NOT EXISTS (select 1 from sys.symmetric_keys skey inner join sys.key_encryptions enc on enc.key_id = skey.symmetric_key_id and crypt_type_desc like '%CERTIFICATE%'
+where skey.name = 'AccountNumberKey')
+BEGIN
+				Open symmetric key AccountNumberKey decryption BY password = 'A4dTyP@clear'
+                Alter symmetric key AccountNumberKey Add encryption by Certificate OMSPIICert
+				Close symmetric key AccountNumberKey
+END
+END
+GO
+
+
+ 
+  

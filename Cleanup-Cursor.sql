@@ -1,4 +1,4 @@
- declare @Target_Licensee varchar(100)  = '' --Set licensee code except 'base' which should be left after the cleanup
+ declare @Target_Licensee varchar(100)  = 'ALAS' --Set licensee code except 'base' which should be left after the cleanup
  declare  @error int  = 0
  if(@Target_Licensee = '')
  begin 
@@ -26,7 +26,7 @@ begin
 	   sys.tables AS tbl
 	   INNER JOIN sys.extended_properties AS p ON p.major_id=tbl.object_id AND p.minor_id=0 AND p.class=1
 	   where p.name = 'TABLE_CLASSIFICATION'
-	   and tbl.name not in ( 'organizations_people' ,'next_unq_number','relationships_pointers')
+	   and tbl.name not in ( 'organizations_people' ,'next_unq_number','relationships_pointers','customers','interface')
 
 	OPEN cleaup_cursor
 
@@ -82,5 +82,7 @@ update organizations_people set status = 'INACTIVE' where isnull(login_id,'') <>
 declare @passHash as varchar(2000),@uid as varchar(50)
 select @uid =organizations_people_uid ,  @passHash = password  from organizations_people where isnull(login_id,'')  like 'admin_%'
  
- insert into password_history
- values ('initialsetuprequiement',@Target_Licensee,@uid,@passHash,getdate()-365,'initial_setup',getdate()-365,'initial_setup')
+ --insert into password_history
+ --values ('initialsetuprequiement',@Target_Licensee,@uid,@passHash,getdate()-365,'initial_setup',getdate()-365,'initial_setup')
+
+ insert into password_history values ('initialsetuprequiement',@Target_Licensee,@uid,@passHash,getdate()-365,'initial_setup',getdate()-365,'initial_setup','','')

@@ -1,0 +1,73 @@
+function Get-SqlConnection($serverName, $databaseName, $username, $password) {
+    $connectionString = "Server=tcp:$serverName,1433;Initial Catalog=$databaseName;Persist Security Info=False;User ID=$username;Password=$password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+    $conn = New-Object System.Data.SqlClient.SqlConnection
+    $conn.ConnectionString = $connectionString
+    $conn.Open()
+    return $conn
+}
+
+# Define connection parameters
+$serverName = "omsnonproddb1.database.windows.net"
+$databaseName = "master"  # Start with the 'master' database to list all databases
+$username = "omsdbadmin"
+$Password = 'Oneshield$qL@321'
+
+# Create an initial connection to the master database
+$masterConn = Get-SqlConnection -serverName $serverName -databaseName "master" -username $username -password $password
+
+# Query to get list of databases
+$queryGetDatabases = "SELECT name FROM sys.databases WHERE name != ('master')"
+
+# Execute the query to get list of databases
+$cmd = $masterConn.CreateCommand()
+$cmd.CommandText = $queryGetDatabases
+$reader = $cmd.ExecuteReader()
+
+# Store database names in an array
+$databases = @()
+while ($reader.Read()) {
+    $databases += $reader["name"]
+}
+$reader.Close()
+$masterConn.Close()
+
+foreach ($db in $databases) {
+    try {
+        # Establish a new connection for each database
+        $dbConn = Get-SqlConnection -serverName $serverName -databaseName $db -username $username -password $password
+        
+        # Define and execute the TRUNCATE command
+        $cmd = $dbConn.CreateCommand()
+        $cmd.CommandText = 
+		"CREATE TABLE automation_data (
+    test_case_id         VARCHAR(20)   NOT NULL PRIMARY KEY,
+    policy_number        VARCHAR(50)   NULL,
+    submission_number    VARCHAR(50)   NULL,
+    organization_name    NVARCHAR(800) NULL,
+    person_first_name    NVARCHAR(800) NULL,
+    person_last_name     NVARCHAR(800) NULL,
+    upin                 VARCHAR(128)  NULL,
+    claim_number         VARCHAR(50)   NULL,
+    status               VARCHAR(50)   NULL,
+    licensee_code        VARCHAR(30)   NOT NULL,
+    added_by             VARCHAR(50)   NULL,
+    changed_by           VARCHAR(50)   NULL,
+    add_date_time        DATETIME      NULL,
+    change_date_time     DATETIME      NULL
+);"  # The truncation command
+        $cmd.ExecuteNonQuery()
+        
+        # Output success message
+        Write-Host "Successfully create table 'automation_data' in database: $db"
+    }
+    catch {
+        # Handle any errors
+        Write-Host "Error create table in database: $db. Error: $_"
+    }
+    finally {
+        # Ensure the connection is closed
+        if ($dbConn.State -eq 'Open') {
+            $dbConn.Close()
+        }
+    }
+}

@@ -1,0 +1,22 @@
+OPEN SYMMETRIC KEY AccountNumberKey DECRYPTION BY CERTIFICATE OMSPIICert;
+
+-- Re-encrypt with known plain text (only safe if you have the original value)
+UPDATE organization_payment_instruments
+SET account_number_encrypted = EncryptByKey(Key_GUID('AccountNumberKey'), '220746757403')
+WHERE 
+    CONVERT(varchar, DecryptByKey(account_number_encrypted)) IS NULL
+    AND account_number_encrypted IS NOT NULL;
+
+CLOSE SYMMETRIC KEY AccountNumberKey;
+
+
+select account_number_encrypted from organization_payment_instruments where organization_payment_instruments_uid='7sWYoaC82EeU2bvxMx8Ytg36'
+ 
+OPEN SYMMETRIC KEY AccountNumberKey DECRYPTION BY certificate OMSPIICert
+ 
+	SELECT CONVERT(varchar, DecryptByKey(account_number_encrypted)) ,account_number_encrypted
+	from organization_payment_instruments --where organization_payment_instruments_uid='7sWYoaC82EeU2bvxMx8Ytg36'
+	where CONVERT(varchar, DecryptByKey(account_number_encrypted)) is null
+	and account_number_encrypted is not null
+
+close SYMMETRIC KEY AccountNumberKey

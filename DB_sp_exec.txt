@@ -1,0 +1,13 @@
+
+-- 1. Create the role
+CREATE ROLE db_sp_exec;
+GO
+
+-- 2. Grant execute permission on the whole database
+GRANT EXECUTE TO db_sp_exec;
+GO
+
+-- 3. (Optional) Add a user/login to the role
+-- Replace YourDbUser with your actual database user
+ALTER ROLE db_sp_exec ADD MEMBER omsdeploy;
+GO

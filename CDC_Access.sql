@@ -4,7 +4,7 @@ BEGIN
     CREATE LOGIN egaonkar 
     WITH PASSWORD = '!UzjScu3HIL'
 END
-ALTER LOGIN [LoginName] DISABLE;
+
 --select * from sys.sql_logins where name like ('%agkalangutkar%')
 
 create user egaonkar from login egaonkar with default_schema=dbo;
@@ -13,7 +13,7 @@ go
 ALTER role db_datawriter add member egaonkar;
 go
 
-unitca hig FILE
+
 
 SELECT  @@servername servername,db_name() dbname,DATABASEPROPERTYEX(DB_NAME(), 'Updateability') db_state,
 --current_user as logged_in_user,
